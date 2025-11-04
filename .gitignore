@@ -1,0 +1,44 @@
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.backup
+.env.production
+
+# PHP / Editor settings
+.phpactor.json
+.phpunit.result.cache
+/.phpunit.cache
+/.idea
+/.vscode
+/.fleet
+/.nova
+/.zed
+
+# Composer auth
+/auth.json
+
+# Node / NPM
+/node_modules
+/public/build
+/public/hot
+
+# Storage
+/public/storage
+/storage/*.key
+/storage/pail
+
+# Vendor
+/vendor
+
+# Laravel Homestead
+Homestead.json
+Homestead.yaml
+
+# Ignore all database seeders
+/database/seeders/

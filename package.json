@@ -1,0 +1,35 @@
+{
+    "$schema": "https://json.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run vite\" --names=server,queue,vite --kill-others",
+        "vite": "vite"
+    },
+    "devDependencies": {
+        "@inertiajs/vue3": "^2.0.0",
+        "@tailwindcss/forms": "^0.5.3",
+        "@tailwindcss/vite": "^4.0.0",
+        "@vitejs/plugin-vue": "^6.0.1",
+        "autoprefixer": "^10.4.12",
+        "axios": "^1.11.0",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^2.0.0",
+        "postcss": "^8.4.31",
+        "tailwindcss": "^3.2.1",
+        "vite": "^7.1.9",
+        "vue": "^3.4.0"
+    },
+    "dependencies": {
+        "@vueuse/core": "^13.9.0",
+        "jspdf": "^3.0.3",
+        "jspdf-autotable": "^5.0.2",
+        "lucide-vue-next": "^0.545.0",
+        "pdfjs-dist": "^5.4.296",
+        "sweetalert2": "^11.26.2",
+        "vue-sweetalert2": "^5.0.11",
+        "vue3-easy-data-table": "^1.5.47",
+        "xlsx": "^0.18.5"
+    }
+}

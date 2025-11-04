@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.text-center {
+  text-align: center;
+}
+/* Dark mode for EasyDataTable */
+.dark .easy-data-table table {
+  background-color: #1f2937 !important; /* Table background */
+  color: #f3f4f6 !important;           /* Default text */
+}
+
+/* Table header */
+.dark .easy-data-table thead {
+  background-color: #111827 !important;
+  color: #f3f4f6 !important;
+}
+
+/* Table body rows */
+.dark .easy-data-table tbody tr {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+/* Alternating rows */
+.dark .easy-data-table tbody tr:nth-child(even) {
+  background-color: #374151 !important;
+}
+
+/* Hover effect */
+.dark .easy-data-table tbody tr:hover {
+  background-color: #4b5563 !important;
+}
