@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Http;
 
 class CashAccountController extends Controller
 {
-
     private $username;
     private $password;
     private $companies;

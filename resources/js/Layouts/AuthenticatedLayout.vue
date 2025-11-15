@@ -8,7 +8,7 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue'
 import { Link } from '@inertiajs/vue3'
 
 // ✅ Lucide icons
-import { LayoutDashboard, Banknote, LogOut, User, Menu, X, Landmark, HandCoins, CircleDollarSign } from 'lucide-vue-next'
+import { LayoutDashboard, Banknote, LogOut, User, Menu, X, Landmark, HandCoins, CircleDollarSign, SquaresUnite  } from 'lucide-vue-next'
 
 const showingNavigationDropdown = ref(false)
 </script>
@@ -21,9 +21,9 @@ const showingNavigationDropdown = ref(false)
         <div class="flex h-16 justify-between items-center">
           <div class="flex items-center">
             <!-- Logo -->
-            <Link :href="route('dashboard')" class="flex items-center space-x-2">
-              <ApplicationLogo class="block h-9 w-auto text-gray-800" />
-              <span class="text-lg font-semibold text-gray-800">MyApp</span>
+            <Link :href="route('dashboard')" class="flex items-center space-x-1">
+              <ApplicationLogo class="block h-12 w-auto text-gray-800" />
+              <span class="text-lg font-semibold text-gray-800">FundSync</span>
             </Link>
 
             <!-- Desktop Nav Links -->
@@ -63,6 +63,16 @@ const showingNavigationDropdown = ref(false)
               >
                 <CircleDollarSign class="w-5 h-5" />
                 <span>Payment Schedule</span>
+              </NavLink>
+
+              
+              <NavLink
+                :href="route('reconcilliation')"
+                :active="route().current('reconcilliation')"
+                class="flex items-center gap-2"
+              >
+                <SquaresUnite  class="w-5 h-5" />
+                <span>Reconcilliation</span>
               </NavLink>
             </div>
           </div>
@@ -164,6 +174,15 @@ const showingNavigationDropdown = ref(false)
           >
             <CircleDollarSign class="w-5 h-5" />
             Payment Schedule
+          </ResponsiveNavLink>
+
+          <ResponsiveNavLink
+            :href="route('reconcilliation')"
+            :active="route().current('reconcilliation')"
+            class="flex items-center gap-2"
+          >
+            <SquaresUnite  class="w-5 h-5" />
+            Reconcilliation
           </ResponsiveNavLink>
         </div>
 
