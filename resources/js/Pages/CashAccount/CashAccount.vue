@@ -233,12 +233,14 @@ const apiBankCashAccount = async () => {
 
   <AuthenticatedLayout>
     <template #header>
-      <div class="flex justify-between items-center">
-        <div class="flex items-center space-x-2">
-            <HandCoins class="w-6 h-6 text-blue-600" />
-            <h2 class="text-2xl font-bold text-gray-800">Bank Cash Account</h2>
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm shadow-blue-200">
+          <HandCoins class="w-4 h-4 text-white" />
         </div>
-        <span class="text-sm text-gray-500">Manage your company’s active cash accounts</span>
+        <div>
+          <h1 class="text-[15px] font-bold text-gray-800 leading-tight">Bank Cash Account</h1>
+          <p class="text-xs text-gray-400">Manage your company’s active cash accounts</p>
+        </div>
       </div>
     </template>
 

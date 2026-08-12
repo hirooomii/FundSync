@@ -307,20 +307,20 @@ const activeTabComponent = computed(() => {
 
   <AuthenticatedLayout>
     <template #header>
-      <div class="flex justify-between items-center">
-        <div class="flex items-center space-x-2">
-          <Landmark class="w-6 h-6 text-blue-600" />
-          <h2 class="text-2xl font-bold text-gray-800">Depository Bank</h2>
+      <div class="flex items-center gap-2.5 flex-1">
+        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm shadow-blue-200">
+          <Landmark class="w-4 h-4 text-white" />
         </div>
-         <div class="flex items-center space-x-3">
-          <span class="text-sm text-gray-500">Manage your company’s bank depositories</span>
-          <button
-            @click="openBankModal"
-            class="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm transition-all"
-          >
-            <PackagePlus class="w-4 h-4" /> Bank
-          </button>
+        <div class="flex-1">
+          <h1 class="text-[15px] font-bold text-gray-800 leading-tight">Depository Bank</h1>
+          <p class="text-xs text-gray-400">Manage your company’s bank depositories</p>
         </div>
+        <button
+          @click="openBankModal"
+          class="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all shadow-sm"
+        >
+          <PackagePlus class="w-4 h-4" /> Add Bank
+        </button>
       </div>
     </template>
 

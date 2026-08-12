@@ -1,227 +1,227 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import ApplicationLogo from '@/Components/ApplicationLogo.vue'
-import Dropdown from '@/Components/Dropdown.vue'
-import DropdownLink from '@/Components/DropdownLink.vue'
-import NavLink from '@/Components/NavLink.vue'
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, usePage } from '@inertiajs/vue3'
+import {
+    LayoutDashboard, CreditCard, Landmark, BarChart3, ArrowRightLeft,
+    CalendarDays, BookOpen, GitMerge, FileCheck, BookMarked, ScrollText,
+    ArrowUpDown, Repeat2, Users, TrendingUp, Activity, ChevronDown,
+    Menu, LogOut, User, Bell, FileText, BookOpenCheck,
+    Banknote, Wallet, PiggyBank, ClipboardList, FileSearch, Database,
+    Settings, Building2, Receipt, Send, CheckSquare, AlertTriangle,
+    FileClock, BarChart2
+} from 'lucide-vue-next'
 
-// ✅ Lucide icons
-import { LayoutDashboard, Banknote, LogOut, User, Menu, X, Landmark, HandCoins, CircleDollarSign, SquaresUnite  } from 'lucide-vue-next'
+const page = usePage()
+const sidebarOpen = ref(true)
+const openGroups = ref(['Main', 'Reconciliation'])
 
-const showingNavigationDropdown = ref(false)
+const navGroups = [
+    {
+        label: 'Main',
+        items: [
+            { label: 'Dashboard',       route: 'dashboard',           icon: LayoutDashboard },
+            { label: 'Cash Account',    route: 'cashaccount',         icon: CreditCard },
+            { label: 'Balances',        route: 'balances.dashboard',  icon: BarChart3 },
+            { label: 'Notifications',   route: 'notifications',       icon: Bell },
+        ]
+    },
+    {
+        label: 'Depository',
+        items: [
+            { label: 'Depository Bank',   route: 'depositorybank',              icon: Landmark },
+            { label: 'List of Bank',      route: 'list.of.bank',                icon: Building2 },
+            { label: 'Payment Schedule',  route: 'payment.schedule.calendar',   icon: CalendarDays },
+        ]
+    },
+    {
+        label: 'Transactions',
+        items: [
+            { label: 'Daily Transaction',    route: 'daily.transaction',    icon: ArrowRightLeft },
+            { label: 'Acumatica Passbook',   route: 'acumatica.passbook',   icon: BookOpen },
+            { label: 'Transaction Ordering', route: 'transaction.ordering', icon: ArrowUpDown },
+            { label: 'Unposted Book',        route: 'unposted.book',        icon: BookMarked },
+        ]
+    },
+    {
+        label: 'Reconciliation',
+        items: [
+            { label: 'Reconciliation',   route: 'reconcilliation',  icon: GitMerge },
+            { label: 'Multiple Approval',route: 'multiple.approval',icon: CheckSquare },
+            { label: 'Multiple Logs',    route: 'multiple.logs',    icon: ScrollText },
+            { label: 'SOA Approval',     route: 'soa.approval',     icon: FileCheck },
+        ]
+    },
+    {
+        label: 'Fund Transfer',
+        items: [
+            { label: 'Fund Transfers',   route: 'fund.transfers',   icon: Send },
+            { label: 'FTA List',         route: 'fta.list',         icon: ClipboardList },
+            { label: 'FT Request',       route: 'ft.request',       icon: FileText },
+            { label: 'Answer Approval',  route: 'answer.approval',  icon: CheckSquare },
+            { label: 'Create FTAF',      route: 'create.ftaf',      icon: Receipt },
+        ]
+    },
+    {
+        label: 'COH & Reports',
+        items: [
+            { label: 'Overall COH',    route: 'overall.coh',     icon: TrendingUp },
+            { label: 'COH Monitoring', route: 'coh.monitoring',  icon: Activity },
+            { label: 'Cash Report',    route: 'cash.report',     icon: PiggyBank },
+            { label: 'Generate Report',route: 'generate.report', icon: BarChart2 },
+        ]
+    },
+    {
+        label: 'Branch',
+        items: [
+            { label: 'Branch Tagging',        route: 'branch.tagging',        icon: Users },
+            { label: 'Branch COH',            route: 'branch.coh',            icon: Wallet },
+            { label: 'Branch Report',         route: 'branch.report',         icon: FileSearch },
+            { label: 'Branch Reconciliation', route: 'branch.reconciliation', icon: Repeat2 },
+        ]
+    },
+    {
+        label: 'Vouchers',
+        items: [
+            { label: 'Voucher List', route: 'voucher.list', icon: Database },
+            { label: 'Voucher Logs', route: 'voucher.logs', icon: FileClock },
+        ]
+    },
+    {
+        label: 'Settings & Logs',
+        items: [
+            { label: 'Approval Matrix', route: 'approval.matrix', icon: Settings },
+            { label: 'Cash Position',   route: 'cash.position',   icon: Banknote },
+            { label: 'Remark Logs',     route: 'remark.logs',     icon: ScrollText },
+            { label: 'Unbind Logs',     route: 'unbind.logs',     icon: AlertTriangle },
+        ]
+    },
+]
+
+function toggleGroup(label) {
+    const idx = openGroups.value.indexOf(label)
+    if (idx >= 0) openGroups.value.splice(idx, 1)
+    else openGroups.value.push(label)
+}
+function isGroupOpen(label) { return openGroups.value.includes(label) }
+function isActive(routeName) { try { return route().current(routeName) } catch { return false } }
+function hasActiveChild(items) { return items.some(i => isActive(i.route)) }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <!-- Navigation Bar -->
-    <nav class="border-b border-gray-200 bg-white shadow-sm">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="flex h-16 justify-between items-center">
-          <div class="flex items-center">
-            <!-- Logo -->
-            <Link :href="route('dashboard')" class="flex items-center space-x-1">
-              <ApplicationLogo class="block h-12 w-auto text-gray-800" />
-              <span class="text-lg font-semibold text-gray-800">FundSync</span>
-            </Link>
+    <div class="flex h-screen overflow-hidden" style="background: #0f1623;">
 
-            <!-- Desktop Nav Links -->
-            <div class="hidden sm:flex sm:space-x-6 sm:ml-10">
-              <NavLink
-                :href="route('dashboard')"
-                :active="route().current('dashboard')"
-                class="flex items-center gap-2"
-              >
-                <LayoutDashboard class="w-5 h-5" />
-                <span>Dashboard</span>
-              </NavLink>
+        <!-- Mobile overlay -->
+        <div v-if="sidebarOpen" class="fixed inset-0 bg-black/60 z-20 lg:hidden" @click="sidebarOpen = false" />
 
-              <NavLink
-                :href="route('cashaccount')"
-                :active="route().current('cashaccount')"
-                class="flex items-center gap-2"
-              >
-                <HandCoins class="w-5 h-5" />
-                <span>Cash Account</span>
-              </NavLink>
-
-              
-              <NavLink
-                :href="route('depositorybank')"
-                :active="route().current('depositorybank')"
-                class="flex items-center gap-2"
-              >
-                <Landmark class="w-5 h-5" />
-                <span>Depository Bank</span>
-              </NavLink>
-
-              <NavLink
-                :href="route('payment.schedule.calendar')"
-                :active="route().current('payment.schedule.calendar')"
-                class="flex items-center gap-2"
-              >
-                <CircleDollarSign class="w-5 h-5" />
-                <span>Payment Schedule</span>
-              </NavLink>
-
-              
-              <NavLink
-                :href="route('reconcilliation')"
-                :active="route().current('reconcilliation')"
-                class="flex items-center gap-2"
-              >
-                <SquaresUnite  class="w-5 h-5" />
-                <span>Reconcilliation</span>
-              </NavLink>
-            </div>
-          </div>
-
-          <!-- User Dropdown -->
-          <div class="hidden sm:flex sm:items-center sm:space-x-6">
-            <Dropdown align="right" width="48">
-              <template #trigger>
+        <!-- ── Sidebar ── -->
+        <aside
+            class="fixed lg:static inset-y-0 left-0 z-30 flex flex-col transition-all duration-300 shrink-0"
+            style="background: #111827; border-right: 1px solid rgba(255,255,255,0.06);"
+            :class="sidebarOpen ? 'w-60' : 'w-0 lg:w-14 overflow-hidden'"
+        >
+            <!-- Logo row -->
+            <div class="flex items-center gap-2.5 px-4 py-4 shrink-0" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                <Link :href="route('dashboard')" class="flex items-center gap-2.5 min-w-0 flex-1">
+                    <ApplicationLogo class="w-7 h-7 shrink-0" />
+                    <span v-if="sidebarOpen" class="font-bold text-white text-[15px] tracking-wide truncate">FundSync</span>
+                </Link>
                 <button
-                  class="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-all"
+                    @click="sidebarOpen = !sidebarOpen"
+                    class="hidden lg:flex items-center justify-center w-7 h-7 rounded-md hover:bg-white/10 text-gray-500 hover:text-white transition-colors shrink-0"
                 >
-                  <User class="w-5 h-5 text-gray-500" />
-                  <span class="text-sm font-medium">
-                    {{ $page.props.auth.user.name }}
-                  </span>
-                  <svg
-                    class="h-4 w-4 text-gray-500"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M6 8l4 4 4-4" />
-                  </svg>
+                    <Menu class="w-3.5 h-3.5" />
                 </button>
-              </template>
+            </div>
 
-              <template #content>
-                <DropdownLink :href="route('profile.edit')">
-                  <div class="flex items-center gap-2">
-                    <User class="w-4 h-4 text-gray-500" />
-                    Profile
-                  </div>
-                </DropdownLink>
+            <!-- Nav scroll area -->
+            <nav class="flex-1 overflow-y-auto py-2 space-y-0.5" style="scrollbar-width: thin; scrollbar-color: #374151 transparent;">
+                <template v-for="group in navGroups" :key="group.label">
+                    <!-- Section toggle -->
+                    <button
+                        v-if="sidebarOpen"
+                        @click="toggleGroup(group.label)"
+                        class="w-full flex items-center justify-between px-4 pt-4 pb-1.5 select-none"
+                    >
+                        <span class="text-[10px] font-bold uppercase tracking-[0.12em] transition-colors"
+                            :class="hasActiveChild(group.items) ? 'text-blue-400' : 'text-gray-600'">
+                            {{ group.label }}
+                        </span>
+                        <ChevronDown
+                            class="w-3 h-3 text-gray-600 transition-transform duration-200"
+                            :class="isGroupOpen(group.label) ? 'rotate-0' : '-rotate-90'"
+                        />
+                    </button>
+                    <!-- Icon-only divider -->
+                    <div v-else class="mx-3 my-2 h-px bg-white/5"></div>
 
-                <DropdownLink :href="route('logout')" method="post" as="button">
-                  <div class="flex items-center gap-2 text-red-600">
-                    <LogOut class="w-4 h-4" />
-                    Log Out
-                  </div>
-                </DropdownLink>
-              </template>
-            </Dropdown>
-          </div>
+                    <!-- Items -->
+                    <div v-show="sidebarOpen ? isGroupOpen(group.label) : true" class="space-y-0.5">
+                        <Link
+                            v-for="item in group.items"
+                            :key="item.route"
+                            :href="route(item.route)"
+                            class="flex items-center gap-3 mx-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150"
+                            :class="isActive(item.route)
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                                : 'text-gray-400 hover:bg-white/8 hover:text-gray-200'"
+                            :title="!sidebarOpen ? item.label : undefined"
+                        >
+                            <component :is="item.icon"
+                                class="shrink-0 transition-colors"
+                                :class="[isActive(item.route) ? 'text-white' : 'text-gray-500', sidebarOpen ? 'w-4 h-4' : 'w-5 h-5']"
+                            />
+                            <span v-if="sidebarOpen" class="truncate">{{ item.label }}</span>
+                        </Link>
+                    </div>
+                </template>
+            </nav>
 
-          <!-- Mobile Hamburger -->
-          <div class="sm:hidden">
-            <button
-              @click="showingNavigationDropdown = !showingNavigationDropdown"
-              class="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <component
-                :is="showingNavigationDropdown ? X : Menu"
-                class="w-6 h-6"
-              />
-            </button>
-          </div>
+            <!-- User footer -->
+            <div class="shrink-0 p-3" style="border-top: 1px solid rgba(255,255,255,0.06);">
+                <div v-if="sidebarOpen" class="flex items-center gap-2.5 px-1 mb-2.5">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-md">
+                        {{ $page.props.auth.user.name.charAt(0).toUpperCase() }}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[13px] font-semibold text-white truncate">{{ $page.props.auth.user.name }}</p>
+                        <p class="text-[11px] text-gray-500 truncate">{{ $page.props.auth.user.email }}</p>
+                    </div>
+                </div>
+                <div class="flex gap-1.5" :class="sidebarOpen ? '' : 'flex-col items-center'">
+                    <Link :href="route('profile.edit')"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:bg-white/8 hover:text-gray-200 transition-colors"
+                    >
+                        <User class="w-3.5 h-3.5 shrink-0" />
+                        <span v-if="sidebarOpen">Profile</span>
+                    </Link>
+                    <Link :href="route('logout')" method="post" as="button"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                    >
+                        <LogOut class="w-3.5 h-3.5 shrink-0" />
+                        <span v-if="sidebarOpen">Log Out</span>
+                    </Link>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ── Main area ── -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden" style="background: #f1f5f9;">
+
+            <!-- Top bar -->
+            <header class="flex items-center gap-3 px-6 py-3.5 shrink-0"
+                style="background: #fff; border-bottom: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.05);">
+                <button @click="sidebarOpen = !sidebarOpen"
+                    class="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors lg:hidden">
+                    <Menu class="w-5 h-5" />
+                </button>
+                <slot name="header" />
+            </header>
+
+            <!-- Page content -->
+            <main class="flex-1 overflow-y-auto">
+                <slot />
+            </main>
         </div>
-      </div>
-
-      <!-- Mobile Dropdown Menu -->
-      <div
-        v-show="showingNavigationDropdown"
-        class="sm:hidden bg-white border-t border-gray-200"
-      >
-        <div class="space-y-1 px-4 py-3">
-          <ResponsiveNavLink
-            :href="route('dashboard')"
-            :active="route().current('dashboard')"
-            class="flex items-center gap-2"
-          >
-            <LayoutDashboard class="w-5 h-5" />
-            Dashboard
-          </ResponsiveNavLink>
-
-          <ResponsiveNavLink
-            :href="route('cashaccount')"
-            :active="route().current('cashaccount')"
-            class="flex items-center gap-2"
-          >
-            <HandCoins class="w-5 h-5" />
-            Cash Account
-          </ResponsiveNavLink>
-
-          <ResponsiveNavLink
-            :href="route('depositorybank')"
-            :active="route().current('depositorybank')"
-            class="flex items-center gap-2"
-          >
-            <Landmark class="w-5 h-5" />
-            Depository Bank
-          </ResponsiveNavLink>
-
-          <ResponsiveNavLink
-            :href="route('payment.schedule.calendar')"
-            :active="route().current('payment.schedule.calendar')"
-            class="flex items-center gap-2"
-          >
-            <CircleDollarSign class="w-5 h-5" />
-            Payment Schedule
-          </ResponsiveNavLink>
-
-          <ResponsiveNavLink
-            :href="route('reconcilliation')"
-            :active="route().current('reconcilliation')"
-            class="flex items-center gap-2"
-          >
-            <SquaresUnite  class="w-5 h-5" />
-            Reconcilliation
-          </ResponsiveNavLink>
-        </div>
-
-        <div class="border-t border-gray-100 px-4 py-4">
-          <div class="flex flex-col space-y-2">
-            <div class="font-semibold text-gray-800">{{ $page.props.auth.user.name }}</div>
-            <div class="text-sm text-gray-500">{{ $page.props.auth.user.email }}</div>
-          </div>
-
-          <div class="mt-3 space-y-1">
-            <ResponsiveNavLink :href="route('profile.edit')" class="flex items-center gap-2">
-              <User class="w-5 h-5" />
-              Profile
-            </ResponsiveNavLink>
-
-            <ResponsiveNavLink
-              :href="route('logout')"
-              method="post"
-              as="button"
-              class="flex items-center gap-2 text-red-600"
-            >
-              <LogOut class="w-5 h-5" />
-              Log Out
-            </ResponsiveNavLink>
-          </div>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Page Header -->
-    <header v-if="$slots.header" class="bg-white shadow-sm">
-      <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <slot name="header" />
-      </div>
-    </header>
-
-    <!-- Page Content -->
-    <main>
-      <slot />
-    </main>
-  </div>
+    </div>
 </template>

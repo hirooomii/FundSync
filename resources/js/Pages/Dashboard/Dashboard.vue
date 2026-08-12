@@ -2,6 +2,18 @@
   <Head title="Dashboard" />
   
   <AuthenticatedLayout>
+    <template #header>
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm shadow-blue-200">
+          <LayoutDashboard class="w-4 h-4 text-white" />
+        </div>
+        <div>
+          <h1 class="text-[15px] font-bold text-gray-800 leading-tight">Dashboard</h1>
+          <p class="text-xs text-gray-400">Company overview and analytics</p>
+        </div>
+      </div>
+    </template>
+
     <div class="p-6">
       <div class="container mx-auto">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -156,6 +168,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { LayoutDashboard } from 'lucide-vue-next';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import 'chartjs-adapter-date-fns';
