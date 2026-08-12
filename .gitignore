@@ -42,3 +42,9 @@ Homestead.yaml
 
 # Ignore all database seeders
 /database/seeders/
+
+# Claude session files
+/.claude/
+
+# CI4 reference source
+/CI4/
