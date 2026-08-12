@@ -61,4 +61,49 @@ class DailyTransactionController extends Controller
             'message' => 'Transaction bound successfully.',
         ]);
     }
+
+    public function getReconCompanies()
+    {
+        $companies = DB::table('cms_bank_depository')
+            ->whereNotNull('Company')
+            ->where('Company', '!=', '')
+            ->distinct()
+            ->orderBy('Company')
+            ->pluck('Company');
+
+        return response()->json($companies);
+    }
+
+    public function getReconBanks(Request $request)
+    {
+        $company = $request->input('company');
+
+        $query = DB::table('cms_bank_depository')
+            ->whereNotNull('BankName')
+            ->where('BankName', '!=', '')
+            ->distinct()
+            ->orderBy('BankName');
+
+        if ($company) {
+            $query->where('Company', $company);
+        }
+
+        return response()->json($query->pluck('BankName'));
+    }
+
+    public function getReconAccounts(Request $request)
+    {
+        $company  = $request->input('company');
+        $bankName = $request->input('bank_name');
+
+        $query = DB::table('cms_bank_depository')
+            ->whereNotNull('AccountNo')
+            ->where('AccountNo', '!=', '')
+            ->orderBy('AccountNo');
+
+        if ($company)  $query->where('Company', $company);
+        if ($bankName) $query->where('BankName', $bankName);
+
+        return response()->json($query->get(['AccountNo', 'AccountName']));
+    }
 }

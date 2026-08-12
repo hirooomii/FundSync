@@ -263,6 +263,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/get-daily-transactions', [DailyTransactionController::class, 'getTransactions']);
     Route::get('/get-acumatica-entries', [DailyTransactionController::class, 'getAcumaticaEntries']);
     Route::post('/bind-transaction', [DailyTransactionController::class, 'bindTransaction']);
+    Route::get('/recon-companies', [DailyTransactionController::class, 'getReconCompanies']);
+    Route::get('/recon-banks', [DailyTransactionController::class, 'getReconBanks']);
+    Route::get('/recon-accounts', [DailyTransactionController::class, 'getReconAccounts']);
 
     // Transaction Ordering
     Route::get('/transaction-ordering', [TransactionOrderingController::class, 'index'])->name('transaction.ordering');

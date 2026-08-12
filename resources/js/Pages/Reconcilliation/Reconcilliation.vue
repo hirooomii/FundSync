@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { GitMerge, Search, Link2, RefreshCw } from 'lucide-vue-next'
 
 const loading = ref(false)
@@ -11,18 +11,51 @@ const selectedBank = ref(null)
 const selectedAcu  = ref(null)
 const filters = ref({ company: '', bank_name: '', account_no: '', date_from: '' })
 
-const companies = ['ROPALI CORPORATION', 'MOTORBELLE CORPORATION', 'MOTORALI CORPORATION', 'MOTOROBEE CORPORATION']
+const companies  = ref([])
+const banks      = ref([])
+const accounts   = ref([])
+
 const fmt = v => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(v ?? 0)
 
 const summary = () => {
-    const matched   = bankTxns.value.filter(t => t.docref).length
-    const total     = bankTxns.value.length
+    const matched = bankTxns.value.filter(t => t.docref).length
+    const total   = bankTxns.value.length
     return { total, matched, unmatched: total - matched }
+}
+
+async function loadCompanies() {
+    try {
+        const res = await axios.get('/recon-companies')
+        companies.value = res.data ?? []
+    } catch {}
+}
+
+async function onCompanyChange() {
+    filters.value.bank_name = ''
+    filters.value.account_no = ''
+    banks.value = []
+    accounts.value = []
+    if (!filters.value.company) return
+    try {
+        const res = await axios.get('/recon-banks', { params: { company: filters.value.company } })
+        banks.value = res.data ?? []
+    } catch {}
+}
+
+async function onBankChange() {
+    filters.value.account_no = ''
+    accounts.value = []
+    try {
+        const res = await axios.get('/recon-accounts', {
+            params: { company: filters.value.company, bank_name: filters.value.bank_name }
+        })
+        accounts.value = res.data ?? []
+    } catch {}
 }
 
 async function fetchData() {
     if (!filters.value.account_no && !filters.value.date_from) {
-        alert('Enter an Account No or Date to search.')
+        alert('Select an Account No or Date to search.')
         return
     }
     loading.value = true
@@ -33,8 +66,8 @@ async function fetchData() {
             axios.get('/get-daily-transactions', { params: { account_no: filters.value.account_no, date: filters.value.date_from } }),
             axios.get('/get-acumatica-entries',  { params: { account_no: filters.value.account_no, date: filters.value.date_from } }),
         ])
-        bankTxns.value = bRes.data ?? []
-        acuTxns.value  = aRes.data ?? []
+        bankTxns.value = bRes.data?.data ?? bRes.data ?? []
+        acuTxns.value  = aRes.data?.data ?? aRes.data ?? []
     } catch { bankTxns.value = []; acuTxns.value = [] }
     finally  { loading.value = false }
 }
@@ -50,6 +83,8 @@ async function bindTransaction() {
         fetchData()
     } catch { alert('Bind failed.') }
 }
+
+onMounted(loadCompanies)
 </script>
 
 <template>
@@ -78,20 +113,31 @@ async function bindTransaction() {
                 <div class="px-5 py-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div>
                         <label class="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Company</label>
-                        <select v-model="filters.company" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition">
+                        <select v-model="filters.company" @change="onCompanyChange"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition">
                             <option value="">All Companies</option>
                             <option v-for="c in companies" :key="c" :value="c">{{ c }}</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Bank Name</label>
-                        <input v-model="filters.bank_name" type="text" placeholder="e.g. BDO"
-                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" />
+                        <select v-model="filters.bank_name" @change="onBankChange"
+                            :disabled="!filters.company"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <option value="">All Banks</option>
+                            <option v-for="b in banks" :key="b" :value="b">{{ b }}</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Account No</label>
-                        <input v-model="filters.account_no" type="text" placeholder="Account number"
-                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition" />
+                        <select v-model="filters.account_no"
+                            :disabled="!filters.company"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <option value="">Select Account</option>
+                            <option v-for="a in accounts" :key="a.AccountNo" :value="a.AccountNo">
+                                {{ a.AccountNo }}{{ a.AccountName ? ' — ' + a.AccountName : '' }}
+                            </option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Date</label>
