@@ -5,14 +5,15 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { ScrollText } from 'lucide-vue-next';
 
-const companies = [
-  'ROPALI CORPORATION',
-  'MOTORBELLE CORPORATION',
-  'MOTORALI CORPORATION',
-  'MOTOROBEE CORPORATION',
-];
-
+const companies = ref([])
 const selectedCompany = ref('');
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companies.value = res.data ?? []
+  } catch {}
+}
 const logs = ref([]);
 const loading = ref(false);
 
@@ -79,7 +80,7 @@ const closeModal = () => {
   selectedLog.value = null;
 };
 
-onMounted(fetchLogs);
+onMounted(() => { loadCompanies(); fetchLogs(); });
 </script>
 
 <template>

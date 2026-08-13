@@ -5,14 +5,15 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { FileText } from 'lucide-vue-next';
 
-const companies = [
-  'ROPALI CORPORATION',
-  'MOTORBELLE CORPORATION',
-  'MOTORALI CORPORATION',
-  'MOTOROBEE CORPORATION',
-];
-
+const companies = ref([])
 const selectedCompany = ref('');
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companies.value = res.data ?? []
+  } catch {}
+}
 const requests = ref([]);
 const loading = ref(false);
 const currentPage = ref(1);
@@ -50,7 +51,7 @@ const getStatusBadge = (row) => {
   return { label: 'On Process', class: 'bg-yellow-100 text-yellow-700 border border-yellow-200' };
 };
 
-onMounted(fetchRequests);
+onMounted(() => { loadCompanies(); fetchRequests(); });
 </script>
 
 <template>

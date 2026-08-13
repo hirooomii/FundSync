@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { BookMarked } from 'lucide-vue-next'
 
 const loading = ref(false)
@@ -14,8 +14,38 @@ const note = ref('')
 const comments = ref([])
 const commentsLoading = ref(false)
 
-const companies = ['ROPALI CORPORATION', 'MOTORBELLE CORPORATION', 'MOTORALI CORPORATION', 'MOTOROBEE CORPORATION']
+const companies = ref([])
+const banks = ref([])
+const accounts = ref([])
 const fmt = v => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(v ?? 0)
+
+async function loadCompanies() {
+    try {
+        const res = await axios.get('/recon-companies')
+        companies.value = res.data ?? []
+    } catch {}
+}
+
+async function onCompanyChange() {
+    filters.value.bank_name = ''
+    filters.value.account_no = ''
+    banks.value = []
+    accounts.value = []
+    if (!filters.value.company) return
+    try {
+        const res = await axios.get('/recon-banks', { params: { company: filters.value.company } })
+        banks.value = res.data ?? []
+    } catch {}
+}
+
+async function onBankChange() {
+    filters.value.account_no = ''
+    accounts.value = []
+    try {
+        const res = await axios.get('/recon-accounts', { params: { company: filters.value.company, bank_name: filters.value.bank_name } })
+        accounts.value = res.data ?? []
+    } catch {}
+}
 
 async function fetchEntries() {
     loading.value = true
@@ -44,6 +74,8 @@ async function saveNote() {
 function copyRef(ref) {
     navigator.clipboard.writeText(ref)
 }
+
+onMounted(loadCompanies)
 </script>
 
 <template>
@@ -64,12 +96,18 @@ function copyRef(ref) {
         <div class="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex flex-wrap gap-3 mb-4">
-                    <select v-model="filters.company" class="border border-gray-300 rounded px-3 py-2 text-sm">
+                    <select v-model="filters.company" @change="onCompanyChange" class="border border-gray-300 rounded px-3 py-2 text-sm">
                         <option value="">All Companies</option>
                         <option v-for="c in companies" :key="c" :value="c">{{ c }}</option>
                     </select>
-                    <input v-model="filters.bank_name" type="text" placeholder="Bank Name" class="border border-gray-300 rounded px-3 py-2 text-sm w-36" />
-                    <input v-model="filters.account_no" type="text" placeholder="Account No" class="border border-gray-300 rounded px-3 py-2 text-sm w-36" />
+                    <select v-model="filters.bank_name" @change="onBankChange" :disabled="!filters.company" class="border border-gray-300 rounded px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed">
+                        <option value="">All Banks</option>
+                        <option v-for="b in banks" :key="b" :value="b">{{ b }}</option>
+                    </select>
+                    <select v-model="filters.account_no" :disabled="!filters.company" class="border border-gray-300 rounded px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed">
+                        <option value="">All Accounts</option>
+                        <option v-for="a in accounts" :key="a.AccountNo" :value="a.AccountNo">{{ a.AccountNo }} — {{ a.AccountName }}</option>
+                    </select>
                     <input v-model="filters.date_from" type="date" class="border border-gray-300 rounded px-3 py-2 text-sm" />
                     <input v-model="filters.date_to" type="date" class="border border-gray-300 rounded px-3 py-2 text-sm" />
                     <button @click="fetchEntries" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium">Fetch</button>

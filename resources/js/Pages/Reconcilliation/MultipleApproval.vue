@@ -5,14 +5,15 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { CheckSquare } from 'lucide-vue-next';
 
-const companies = [
-  'ROPALI CORPORATION',
-  'MOTORBELLE CORPORATION',
-  'MOTORALI CORPORATION',
-  'MOTOROBEE CORPORATION',
-];
-
+const companies = ref([])
 const selectedCompany = ref('');
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companies.value = res.data ?? []
+  } catch {}
+}
 const groups = ref([]);
 const loading = ref(false);
 
@@ -115,7 +116,7 @@ const submitDisapprove = async () => {
   }
 };
 
-onMounted(fetchGroups);
+onMounted(() => { loadCompanies(); fetchGroups(); });
 </script>
 
 <template>

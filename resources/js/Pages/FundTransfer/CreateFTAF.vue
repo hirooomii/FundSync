@@ -7,8 +7,15 @@ import { Receipt } from 'lucide-vue-next'
 const loading = ref(false)
 const transfers = ref([])
 const createModal = ref(false)
-const companies = ['ROPALI CORPORATION', 'MOTORBELLE CORPORATION', 'MOTORALI CORPORATION', 'MOTOROBEE CORPORATION']
+const companies = ref([])
 const cashAccounts = ref([])
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companies.value = res.data ?? []
+  } catch {}
+}
 
 const form = ref({
     company: '',
@@ -121,7 +128,7 @@ async function createFundTransfer() {
     } catch { alert('Error creating fund transfer.') }
 }
 
-onMounted(fetchTransfers)
+onMounted(() => { loadCompanies(); fetchTransfers() })
 </script>
 
 <template>

@@ -5,14 +5,15 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { Banknote } from 'lucide-vue-next';
 
-const companies = [
-  'ROPALI CORPORATION',
-  'MOTORBELLE CORPORATION',
-  'MOTORALI CORPORATION',
-  'MOTOROBEE CORPORATION',
-];
-
+const companies = ref([])
 const selectedCompany = ref('');
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companies.value = res.data ?? []
+  } catch {}
+}
 const dateFrom = ref('');
 const dateTo = ref('');
 const records = ref([]);
@@ -63,7 +64,7 @@ const saveRecord = async () => {
   }
 };
 
-onMounted(fetchRecords);
+onMounted(() => { loadCompanies(); fetchRecords(); });
 </script>
 
 <template>

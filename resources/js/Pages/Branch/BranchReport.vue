@@ -5,31 +5,43 @@ import { ref, onMounted } from 'vue'
 import { FileSearch } from 'lucide-vue-next'
 
 const loading = ref(false)
-const bankName = ref('')
 const company = ref('')
+const bankName = ref('')
 const accountNo = ref('')
 const dateFrom = ref('')
 const dateTo = ref('')
+const companies = ref([])
 const banks = ref([])
-const companies = ['ROPALI CORPORATION', 'MOTORBELLE CORPORATION', 'MOTORALI CORPORATION', 'MOTOROBEE CORPORATION']
 const accountNumbers = ref([])
 const records = ref([])
 
 const fmt = v => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(v ?? 0)
 
-async function loadBanks() {
+async function loadCompanies() {
     try {
-        const res = await axios.get('/get-bank-names')
+        const res = await axios.get('/recon-companies')
+        companies.value = res.data ?? []
+    } catch {}
+}
+
+async function onCompanyChange() {
+    bankName.value = ''
+    accountNo.value = ''
+    banks.value = []
+    accountNumbers.value = []
+    if (!company.value) return
+    try {
+        const res = await axios.get('/recon-banks', { params: { company: company.value } })
         banks.value = res.data ?? []
     } catch {}
 }
 
-async function fetchAccountNumbers() {
-    if (!bankName.value && !company.value) return
+async function onBankChange() {
+    accountNo.value = ''
+    accountNumbers.value = []
     try {
-        const res = await axios.post('/get-account-numbers-by-company', { bankId: bankName.value, company: company.value })
-        accountNumbers.value = res.data?.data ?? res.data ?? []
-        accountNo.value = ''
+        const res = await axios.get('/recon-accounts', { params: { company: company.value, bank_name: bankName.value } })
+        accountNumbers.value = res.data ?? []
     } catch {}
 }
 
@@ -48,7 +60,7 @@ async function generate() {
     finally { loading.value = false }
 }
 
-onMounted(loadBanks)
+onMounted(loadCompanies)
 </script>
 
 <template>
@@ -71,24 +83,24 @@ onMounted(loadBanks)
             <div class="bg-white rounded-lg shadow p-6 mb-6">
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Bank Name <span class="text-red-500">*</span></label>
-                        <select v-model="bankName" @change="fetchAccountNumbers" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select bank...</option>
-                            <option v-for="b in banks" :key="b.BankCode" :value="b.BankCode">{{ b.BankName }}</option>
-                        </select>
-                    </div>
-                    <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Company <span class="text-red-500">*</span></label>
-                        <select v-model="company" @change="fetchAccountNumbers" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+                        <select v-model="company" @change="onCompanyChange" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
                             <option value="">Select company...</option>
                             <option v-for="c in companies" :key="c" :value="c">{{ c }}</option>
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Bank Name <span class="text-red-500">*</span></label>
+                        <select v-model="bankName" @change="onBankChange" :disabled="!company" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">Select bank...</option>
+                            <option v-for="b in banks" :key="b" :value="b">{{ b }}</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Account Number <span class="text-red-500">*</span></label>
-                        <select v-model="accountNo" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+                        <select v-model="accountNo" :disabled="!company" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                             <option value="">Select account...</option>
-                            <option v-for="a in accountNumbers" :key="a.AccountNo" :value="a.AccountNo">{{ a.AccountNo }}</option>
+                            <option v-for="a in accountNumbers" :key="a.AccountNo" :value="a.AccountNo">{{ a.AccountNo }} — {{ a.AccountName }}</option>
                         </select>
                     </div>
                     <div>

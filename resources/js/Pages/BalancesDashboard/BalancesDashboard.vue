@@ -5,7 +5,7 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { BarChart3 } from 'lucide-vue-next';
 
-const companyTabs = ['ALL', 'ROPALI', 'MOTORBELLE', 'MOTORALI', 'MOTOROBEE'];
+const companyTabs = ref(['ALL']);
 const activeTab = ref('ALL');
 
 const balances = ref([]);
@@ -103,7 +103,17 @@ const getStatusBadgeClass = (status) => {
   return 'bg-yellow-100 text-yellow-700 border border-yellow-200';
 };
 
-onMounted(fetchBalances);
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies');
+    companyTabs.value = ['ALL', ...(res.data ?? [])];
+  } catch {}
+}
+
+onMounted(async () => {
+  await loadCompanies();
+  fetchBalances();
+});
 </script>
 
 <template>

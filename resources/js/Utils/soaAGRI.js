@@ -20,6 +20,15 @@ export async function parsePDF(file) {
   return fullText;
 }
 
+function parseDateFromDmyText(raw) {
+    const months = { Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12 };
+    const m = raw.match(/^(\d{2})-([A-Za-z]{3})-(\d{4})$/);
+    if (!m) return null;
+    const month = months[m[2]];
+    if (!month) return null;
+    return `${m[3]}-${String(month).padStart(2,'0')}-${m[1]}`;
+}
+
 export async function parseAgriStatement(rawText) {
     const text = rawText.replace(/\r\n/g, '').replace(/\n/g, '').replace(/\s+/g, ' ').trim();
 

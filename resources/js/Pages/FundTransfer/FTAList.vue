@@ -5,12 +5,14 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { ClipboardList } from 'lucide-vue-next';
 
-const companies = [
-  'ROPALI CORPORATION',
-  'MOTORBELLE CORPORATION',
-  'MOTORALI CORPORATION',
-  'MOTOROBEE CORPORATION',
-];
+const companies = ref([])
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companies.value = res.data ?? []
+  } catch {}
+}
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -75,7 +77,7 @@ const closeModal = () => {
   modalDetails.value = [];
 };
 
-onMounted(fetchVouchers);
+onMounted(() => { loadCompanies(); fetchVouchers(); });
 </script>
 
 <template>

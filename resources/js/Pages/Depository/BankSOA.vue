@@ -104,6 +104,29 @@ const handleSaveSOA = async () => {
 };
 
 
+const approve = async (item) => {
+  try {
+    const confirm = await Swal.fire({
+      title: 'Approve SOA?',
+      text: 'Are you sure you want to approve this Statement of Account?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, approve it!',
+      cancelButtonText: 'Cancel',
+    })
+
+    if (!confirm.isConfirmed) return
+
+    await axios.post('/approve-soa', { id: item.RecID })
+
+    Swal.fire('Approved', 'SOA has been approved successfully.', 'success')
+
+    await fetchSOA()
+  } catch (error) {
+    Swal.fire('Error', 'Something went wrong while approving the SOA.', 'error')
+  }
+}
+
 const disapprove = async (item) => {
   try {
     const confirm = await Swal.fire({

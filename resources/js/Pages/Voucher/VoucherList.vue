@@ -5,14 +5,15 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { Database } from 'lucide-vue-next';
 
-const companies = [
-  'ROPALI CORPORATION',
-  'MOTORBELLE CORPORATION',
-  'MOTORALI CORPORATION',
-  'MOTOROBEE CORPORATION',
-];
-
+const companies = ref([])
 const selectedCompany = ref('');
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companies.value = res.data ?? []
+  } catch {}
+}
 const search = ref('');
 const vouchers = ref([]);
 const loading = ref(false);
@@ -44,7 +45,7 @@ const paginatedVouchers = () => {
 
 const totalPages = () => Math.ceil(vouchers.value.length / perPage);
 
-onMounted(fetchVouchers);
+onMounted(() => { loadCompanies(); fetchVouchers(); });
 </script>
 
 <template>

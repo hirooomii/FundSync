@@ -5,8 +5,15 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { TrendingUp } from 'lucide-vue-next';
 
-const companyTabs = ['ALL', 'ROPALI', 'MOTORBELLE', 'MOTORALI', 'MOTOROBEE'];
+const companyTabs = ref(['ALL']);
 const selectedCompany = ref('ALL');
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companyTabs.value = ['ALL', ...(res.data ?? [])]
+  } catch {}
+}
 const dateFrom = ref('');
 const dateTo = ref('');
 const records = ref([]);
@@ -31,7 +38,7 @@ const fetchData = async () => {
   loading.value = true;
   try {
     const res = await axios.post('/fetch-overall-coh', {
-      company: selectedCompany.value,
+      company: selectedCompany.value === 'ALL' ? '' : selectedCompany.value,
       date_from: dateFrom.value,
       date_to: dateTo.value,
     });
@@ -53,7 +60,7 @@ const closeModal = () => {
   selectedRecord.value = null;
 };
 
-onMounted(fetchData);
+onMounted(() => { loadCompanies(); fetchData(); });
 </script>
 
 <template>

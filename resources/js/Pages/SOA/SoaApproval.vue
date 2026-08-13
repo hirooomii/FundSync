@@ -18,8 +18,15 @@ const remarks = ref('')
 const transactions = ref([])
 const txnLoading = ref(false)
 
-const companies = ['ROPALI CORPORATION', 'MOTORBELLE CORPORATION', 'MOTORALI CORPORATION', 'MOTOROBEE CORPORATION']
+const companies = ref([])
 const fmt = v => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(v ?? 0)
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companies.value = res.data ?? []
+  } catch {}
+}
 
 const statusBadge = s => s === 'APPROVED' ? 'bg-green-100 text-green-800' : s === 'DISAPPROVED' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
 const statusLabel = s => s ?? 'Pending'
@@ -60,7 +67,7 @@ async function viewTransactions(soa) {
     } catch {} finally { txnLoading.value = false }
 }
 
-onMounted(fetchSoas)
+onMounted(() => { loadCompanies(); fetchSoas() })
 </script>
 
 <template>

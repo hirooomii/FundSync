@@ -176,6 +176,33 @@ const handleSavePBCOM = async () => {
   }
 }
 
+const handleOfflineSOA = async () => {
+  if (!form.value.SOA) return Swal.fire('Warning', 'Please attach a file first.', 'warning')
+  if (!form.value.TransacAt || !form.value.PassbookBal || !form.value.Remarks)
+    return Swal.fire('Warning', 'All fields are required.', 'warning')
+  if (isNaN(parseFloat(form.value.PassbookBal)))
+    return Swal.fire('Warning', 'Passbook Balance must be numeric.', 'warning')
+
+  loading.value = true
+  try {
+    await axios.post('/insert-soa', {
+      accountno: props.accountNo,
+      transactionat: form.value.TransacAt,
+      passbookbal: form.value.PassbookBal,
+      remarks: form.value.Remarks,
+      extensionFile: form.value.extension,
+      base64: form.value.base64File,
+    })
+    Swal.fire('Success', 'SOA file uploaded successfully.', 'success')
+    await fetchSOA()
+  } catch (error) {
+    console.error(error)
+    Swal.fire('Error', 'Failed to upload SOA.', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
 const approve = async (item) => {
   try {
     const confirm = await Swal.fire({
@@ -345,6 +372,12 @@ watch(() => props.accountNo, loadAll)
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
+              <button
+                @click="handleOfflineSOA"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition"
+              >
+                Offline SOA
+              </button>
               <button
                 @click="handleSavePBCOM"
                 class="px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition"

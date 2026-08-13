@@ -5,14 +5,15 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { Building2 } from 'lucide-vue-next';
 
-const companies = [
-  'ROPALI CORPORATION',
-  'MOTORBELLE CORPORATION',
-  'MOTORALI CORPORATION',
-  'MOTOROBEE CORPORATION',
-];
-
+const companies = ref([])
 const selectedCompany = ref('');
+
+async function loadCompanies() {
+  try {
+    const res = await axios.get('/recon-companies')
+    companies.value = res.data ?? []
+  } catch {}
+}
 const search = ref('');
 const accounts = ref([]);
 const loading = ref(false);
@@ -56,7 +57,7 @@ const paginatedAccounts = computed(() => {
 
 const totalPages = computed(() => Math.ceil(filteredAccounts.value.length / perPage));
 
-onMounted(fetchAccounts);
+onMounted(() => { loadCompanies(); fetchAccounts(); });
 </script>
 
 <template>

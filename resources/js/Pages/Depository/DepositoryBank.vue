@@ -234,27 +234,17 @@ const closeBankDetails = () => {
 }
 
 const bankSOAComponent = computed(() => {
-  if (!bankParser.value) return BankSOA; 
-  switch (bankParser.value.toUpperCase()) {
-    case 'AGRIBANK':
-      return BankSOAAGRI;
-    case 'AUB':
-      return BankSOAAUB;
-    case 'BPI':
-      return BankSOABPI;
-    case 'BDO':
-      return BankSOABPO;
-    case 'UNIONBANK':
-      return BankSOAUB;
-    case 'LANDBANK':
-      return BankSOALBP;
-    case 'PBCOM':
-      return BankSOAPBCOM;
-    case 'PNB':
-      return BankSOAPNB;
-    default:
-      return BankSOA; 
-  }
+  if (!bankParser.value) return BankSOA;
+  const name = bankParser.value.toUpperCase();
+  if (name.includes('AGRI')) return BankSOAAGRI;
+  if (name.includes('AUB') || name.includes('ASIA UNITED')) return BankSOAAUB;
+  if (name.includes('BPI') || name.includes('BANK OF THE PHILIPPINE')) return BankSOABPI;
+  if (name.includes('BDO') || name.includes('BANCO DE ORO')) return BankSOABPO;
+  if (name.includes('UNION')) return BankSOAUB;
+  if (name.includes('LAND')) return BankSOALBP;
+  if (name.includes('PBCOM') || name.includes('PHILIPPINE BANK OF COMM')) return BankSOAPBCOM;
+  if (name.includes('PNB') || name.includes('PHILIPPINE NATIONAL')) return BankSOAPNB;
+  return BankSOA;
 });
 
 const tabs = [

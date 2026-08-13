@@ -298,12 +298,11 @@ class BankDepositoryController extends Controller
 
             if (!empty($validated['base64']) && !empty($validated['extensionFile'])) {
                 $fileName = 'SOA_' . time() . '.' . $validated['extensionFile'];
-                $relativePath = 'uploads/soa/' . $fileName; 
+                $relativePath = 'uploads/soa/' . $fileName;
 
-                Storage::makeDirectory('public/uploads/soa');
-                Storage::put($relativePath, base64_decode($validated['base64']));
+                Storage::disk('public')->put($relativePath, base64_decode($validated['base64']));
 
-                $filePath = $relativePath; 
+                $filePath = $relativePath;
             }
 
             $soa = SOAModel::create([
@@ -345,9 +344,37 @@ class BankDepositoryController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Missing balances data'], 400);
             }
 
+                // Always use the SOA record's AccountNo — the selected account wins over whatever the PDF parser extracted
+            $soa = SOAModel::find($SOAID);
+            $accountNo = $soa?->AccountNo ?? ($balances['account_no'] ?? null);
+
+            $balances['account_no'] = $accountNo;
             $balances['SOAID'] = $SOAID;
+            if (!empty($balances['transaction_date'])) {
+                $balances['transaction_date'] = $this->normalizeDate($balances['transaction_date']);
+            }
+
+            if (empty($transactions)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No transactions were extracted from the PDF. Please verify the file format matches the selected bank.',
+                ], 422);
+            }
+
+            // Whitelist of allowed columns to prevent unknown-column DB errors
+            $allowedTxFields = [
+                'account_no', 'bank_code', 'transaction_date', 'amount', 'runningbal',
+                'debit_or_credit', 'transaction_type', 'description', 'reference',
+                'additional_info', 'SOAID',
+            ];
+
             foreach ($transactions as &$transaction) {
+                $transaction['account_no'] = $accountNo;
                 $transaction['SOAID'] = $SOAID;
+                if (!empty($transaction['transaction_date'])) {
+                    $transaction['transaction_date'] = $this->normalizeDate($transaction['transaction_date']);
+                }
+                $transaction = array_intersect_key($transaction, array_flip($allowedTxFields));
             }
             unset($transaction);
 
@@ -356,7 +383,9 @@ class BankDepositoryController extends Controller
             DB::table('cms_bank_balances_pending')->insert($balances);
 
             if (!empty($transactions)) {
-                DB::table('cms_bank_transactions_pending')->insert($transactions);
+                foreach (array_chunk($transactions, 50) as $chunk) {
+                    DB::table('cms_bank_transactions_pending')->insert($chunk);
+                }
             }
 
             DB::commit();
@@ -374,6 +403,28 @@ class BankDepositoryController extends Controller
                 'details' => $e->getMessage()
             ], 500);
         }
+    }
+
+    private function normalizeDate(?string $dateStr): ?string
+    {
+        if (empty($dateStr)) return null;
+
+        // Already YYYY-MM-DD
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) return $dateStr;
+
+        $formats = ['m/d/Y', 'Y/m/d', 'd/m/Y', 'd-M-Y', 'M d, Y', 'Y-m-d H:i:s'];
+        foreach ($formats as $format) {
+            try {
+                $date = Carbon::createFromFormat($format, $dateStr);
+                if ($date && $date->format($format) === $dateStr) {
+                    return $date->format('Y-m-d');
+                }
+            } catch (\Exception $e) {}
+        }
+
+        // Last resort
+        $timestamp = strtotime($dateStr);
+        return $timestamp !== false ? date('Y-m-d', $timestamp) : null;
     }
 
     public function approveSOA(Request $request)
@@ -427,6 +478,9 @@ class BankDepositoryController extends Controller
             if (!empty($validTx)) {
                 CmsBankTransaction::insert($validTx);
             }
+
+            CmsBankTransactionPending::where('SOAID', $id)->delete();
+            CmsBankBalancePending::where('SOAID', $id)->delete();
 
             SOAModel::where('RecID', $id)->update([
                 'Status' => 'APPROVED',

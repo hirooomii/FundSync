@@ -1,11 +1,46 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Repeat2 } from 'lucide-vue-next'
 
+const filterCompany = ref('')
+const filterBank = ref('')
+const companies = ref([])
+const bankOptions = ref([])
+const accountOptions = ref([])
 const accountNo = ref('')
 const txnDate = ref(new Date().toISOString().split('T')[0])
+
+async function loadCompanies() {
+    try {
+        const res = await axios.get('/recon-companies')
+        companies.value = res.data ?? []
+    } catch {}
+}
+
+async function onCompanyChange() {
+    filterBank.value = ''
+    accountNo.value = ''
+    bankOptions.value = []
+    accountOptions.value = []
+    if (!filterCompany.value) return
+    try {
+        const res = await axios.get('/recon-banks', { params: { company: filterCompany.value } })
+        bankOptions.value = res.data ?? []
+    } catch {}
+}
+
+async function onBankChange() {
+    accountNo.value = ''
+    accountOptions.value = []
+    try {
+        const res = await axios.get('/recon-accounts', { params: { company: filterCompany.value, bank_name: filterBank.value } })
+        accountOptions.value = res.data ?? []
+    } catch {}
+}
+
+onMounted(loadCompanies)
 const loading = ref(false)
 const bankTxns = ref([])
 const acuTxns = ref([])
@@ -54,8 +89,25 @@ async function bindTransaction() {
             <div class="bg-white rounded-lg shadow p-6 mb-6">
                 <div class="flex flex-wrap gap-3 items-end">
                     <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Company</label>
+                        <select v-model="filterCompany" @change="onCompanyChange" class="border border-gray-300 rounded px-3 py-2 text-sm">
+                            <option value="">Select company...</option>
+                            <option v-for="c in companies" :key="c" :value="c">{{ c }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Bank</label>
+                        <select v-model="filterBank" @change="onBankChange" :disabled="!filterCompany" class="border border-gray-300 rounded px-3 py-2 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">Select bank...</option>
+                            <option v-for="b in bankOptions" :key="b" :value="b">{{ b }}</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Account No</label>
-                        <input v-model="accountNo" type="text" placeholder="Account number" class="border border-gray-300 rounded px-3 py-2 text-sm w-52" />
+                        <select v-model="accountNo" :disabled="!filterCompany" class="border border-gray-300 rounded px-3 py-2 text-sm w-52 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">Select account...</option>
+                            <option v-for="a in accountOptions" :key="a.AccountNo" :value="a.AccountNo">{{ a.AccountNo }} — {{ a.AccountName }}</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Date</label>
