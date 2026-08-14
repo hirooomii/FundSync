@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import ApplicationLogo from '@/Components/ApplicationLogo.vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import {
@@ -14,7 +14,8 @@ import {
 
 const page = usePage()
 const sidebarOpen = ref(true)
-const openGroups = ref(['Main', 'Reconciliation'])
+
+function isActive(routeName) { try { return route().current(routeName) } catch { return false } }
 
 const navGroups = [
     {
@@ -30,17 +31,15 @@ const navGroups = [
         label: 'Depository',
         items: [
             { label: 'Depository Bank',   route: 'depositorybank',              icon: Landmark },
-            { label: 'List of Bank',      route: 'list.of.bank',                icon: Building2 },
             { label: 'Payment Schedule',  route: 'payment.schedule.calendar',   icon: CalendarDays },
         ]
     },
     {
         label: 'Transactions',
         items: [
-            { label: 'Daily Transaction',    route: 'daily.transaction',    icon: ArrowRightLeft },
-            { label: 'Acumatica Passbook',   route: 'acumatica.passbook',   icon: BookOpen },
-            { label: 'Transaction Ordering', route: 'transaction.ordering', icon: ArrowUpDown },
-            { label: 'Unposted Book',        route: 'unposted.book',        icon: BookMarked },
+            { label: 'Daily Transaction',  route: 'daily.transaction',  icon: ArrowRightLeft },
+            { label: 'Acumatica Passbook', route: 'acumatica.passbook', icon: BookOpen },
+            { label: 'Unposted Book',      route: 'unposted.book',      icon: BookMarked },
         ]
     },
     {
@@ -98,13 +97,27 @@ const navGroups = [
     },
 ]
 
+function getActiveGroupLabel() {
+    for (const group of navGroups) {
+        if (group.items.some(i => isActive(i.route))) return group.label
+    }
+    return 'Main'
+}
+
+const openGroups = ref([getActiveGroupLabel()])
+
+watch(() => page.url, () => {
+    openGroups.value = [getActiveGroupLabel()]
+})
+
 function toggleGroup(label) {
-    const idx = openGroups.value.indexOf(label)
-    if (idx >= 0) openGroups.value.splice(idx, 1)
-    else openGroups.value.push(label)
+    if (openGroups.value.includes(label)) {
+        openGroups.value = []
+    } else {
+        openGroups.value = [label]
+    }
 }
 function isGroupOpen(label) { return openGroups.value.includes(label) }
-function isActive(routeName) { try { return route().current(routeName) } catch { return false } }
 function hasActiveChild(items) { return items.some(i => isActive(i.route)) }
 </script>
 
@@ -156,24 +169,26 @@ function hasActiveChild(items) { return items.some(i => isActive(i.route)) }
                     <div v-else class="mx-3 my-2 h-px bg-white/5"></div>
 
                     <!-- Items -->
-                    <div v-show="sidebarOpen ? isGroupOpen(group.label) : true" class="space-y-0.5">
-                        <Link
-                            v-for="item in group.items"
-                            :key="item.route"
-                            :href="route(item.route)"
-                            class="flex items-center gap-3 mx-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150"
-                            :class="isActive(item.route)
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
-                                : 'text-gray-400 hover:bg-white/8 hover:text-gray-200'"
-                            :title="!sidebarOpen ? item.label : undefined"
-                        >
-                            <component :is="item.icon"
-                                class="shrink-0 transition-colors"
-                                :class="[isActive(item.route) ? 'text-white' : 'text-gray-500', sidebarOpen ? 'w-4 h-4' : 'w-5 h-5']"
-                            />
-                            <span v-if="sidebarOpen" class="truncate">{{ item.label }}</span>
-                        </Link>
-                    </div>
+                    <Transition name="sidebar-slide">
+                        <div v-if="sidebarOpen ? isGroupOpen(group.label) : true" class="space-y-0.5 overflow-hidden">
+                            <Link
+                                v-for="item in group.items"
+                                :key="item.route"
+                                :href="route(item.route)"
+                                class="flex items-center gap-3 mx-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150"
+                                :class="isActive(item.route)
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                                    : 'text-gray-400 hover:bg-white/8 hover:text-gray-200'"
+                                :title="!sidebarOpen ? item.label : undefined"
+                            >
+                                <component :is="item.icon"
+                                    class="shrink-0 transition-colors"
+                                    :class="[isActive(item.route) ? 'text-white' : 'text-gray-500', sidebarOpen ? 'w-4 h-4' : 'w-5 h-5']"
+                                />
+                                <span v-if="sidebarOpen" class="truncate">{{ item.label }}</span>
+                            </Link>
+                        </div>
+                    </Transition>
                 </template>
             </nav>
 
@@ -225,3 +240,18 @@ function hasActiveChild(items) { return items.some(i => isActive(i.route)) }
         </div>
     </div>
 </template>
+
+<style scoped>
+.sidebar-slide-enter-active,
+.sidebar-slide-leave-active {
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+    max-height: 600px;
+    opacity: 1;
+    overflow: hidden;
+}
+.sidebar-slide-enter-from,
+.sidebar-slide-leave-to {
+    max-height: 0;
+    opacity: 0;
+}
+</style>

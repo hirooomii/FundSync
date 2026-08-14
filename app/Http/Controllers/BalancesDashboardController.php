@@ -47,11 +47,12 @@ class BalancesDashboardController extends Controller
                 'BD.AccountNo'
             )
             ->select(
-                'BD.AccountNo as account_no',
-                'BD.AccountName as account_name',
-                'BD.BankName as bank',
-                'BD.Company as company',
-                'BB.available_balance'
+                'BD.AccountNo as AccountNo',
+                'BD.AccountName as AccountName',
+                'BD.BankName as Bank',
+                'BD.Company as Company',
+                DB::raw('BB.available_balance as AvailableBalance'),
+                DB::raw("CASE WHEN BB.available_balance IS NOT NULL THEN 'Balanced' ELSE 'No Balance Data' END AS Status")
             );
 
         if (!empty($company)) {
@@ -60,10 +61,7 @@ class BalancesDashboardController extends Controller
 
         $data = $query->get();
 
-        return response()->json([
-            'status' => 200,
-            'data'   => $data,
-        ]);
+        return response()->json($data);
     }
 
     public function getAccountTransactions(Request $request)
@@ -72,12 +70,14 @@ class BalancesDashboardController extends Controller
         $dateFrom  = $request->input('date_from');
         $dateTo    = $request->input('date_to');
 
-        $data = DB::table('cms_bank_transactions')
+        $query = DB::table('cms_bank_transactions')
             ->where('account_no', $accountNo)
-            ->whereBetween('transaction_date', [$dateFrom, $dateTo])
-            ->orderBy('transaction_date', 'desc')
-            ->paginate(20);
+            ->orderBy('transaction_date', 'desc');
 
-        return response()->json($data);
+        if (!empty($dateFrom) && !empty($dateTo)) {
+            $query->whereBetween('transaction_date', [$dateFrom, $dateTo]);
+        }
+
+        return response()->json($query->get());
     }
 }

@@ -57,6 +57,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/cm3-acumatica-summary', [DashboardController::class, 'getCM3AcumaticaSummary']);
     Route::get('/cm4-acumatica-summary', [DashboardController::class, 'getCM4AcumaticaSummary']);
     Route::get('/reconcilliation', [ReconcilliationController::class, 'index'])->name('reconcilliation');
+    Route::get('/recon-bank-transactions',   [ReconcilliationController::class, 'getBankTransactions']);
+    Route::get('/recon-acumatica-bookings',  [ReconcilliationController::class, 'getAcumaticaBookings']);
+    Route::post('/recon-bind',               [ReconcilliationController::class, 'bindTransaction']);
 });
 
 
@@ -77,8 +80,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/merge-cashaccount', [CashAccountController:: class, 'mergeCashAccount'])
         ->name('merge.cashaccount');
 
-    Route::post('/api-cashaccount', [CashAccountController:: class, 'fetchCashAccounts'])
-        ->name('api.cashaccount');
+    // Acumatica API fetch — disabled until API credentials are configured
+    // Route::post('/api-cashaccount', [CashAccountController:: class, 'fetchCashAccounts'])
+    //     ->name('api.cashaccount');
 
 });
 
@@ -260,9 +264,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Daily Transaction
     Route::get('/daily-transaction', [DailyTransactionController::class, 'index'])->name('daily.transaction');
-    Route::get('/get-daily-transactions', [DailyTransactionController::class, 'getTransactions']);
-    Route::get('/get-acumatica-entries', [DailyTransactionController::class, 'getAcumaticaEntries']);
-    Route::post('/bind-transaction', [DailyTransactionController::class, 'bindTransaction']);
+    Route::get('/fetch-joined-transactions', [DailyTransactionController::class, 'fetchJoinedTransactions']);
+    Route::post('/auto-bind-transactions', [DailyTransactionController::class, 'autoBindTransactions']);
     Route::get('/recon-companies', [DailyTransactionController::class, 'getReconCompanies']);
     Route::get('/recon-banks', [DailyTransactionController::class, 'getReconBanks']);
     Route::get('/recon-accounts', [DailyTransactionController::class, 'getReconAccounts']);

@@ -254,12 +254,13 @@ const apiBankCashAccount = async () => {
             </h3>
         </div>
         <div class="flex items-center gap-2">
-          <button
+          <!-- Acumatica API sync — disabled until API credentials are configured -->
+          <!-- <button
             @click="apiBankCashAccount"
             class="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded-md shadow-sm transition-all hover:scale-105 flex items-center gap-2 border border-green-200"
           >
             <BanknoteArrowDown class="w-5 h-8 text-green-600" />
-          </button>
+          </button> -->
          <button
             @click="mergeAccounts"
             class="bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-1 rounded-md shadow-sm transition-all hover:scale-105 flex items-center gap-2 border border-amber-200"

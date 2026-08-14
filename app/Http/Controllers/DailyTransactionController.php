@@ -13,53 +13,181 @@ class DailyTransactionController extends Controller
         return Inertia::render('DailyTransaction/DailyTransaction');
     }
 
-    public function getTransactions(Request $request)
+    public function fetchJoinedTransactions(Request $request)
     {
         $accountNo = $request->input('account_no');
-        $date      = $request->input('date');
+        $dateFrom  = $request->input('date_from');
+        $dateTo    = $request->input('date_to');
 
-        $data = DB::table('cms_bank_transactions')
+        // Resolve CashAccount code for this account (alphanumeric link e.g. GH00576)
+        $cashAccountRecord = DB::table('bank_cash_account')
+            ->where('AccountNo', $accountNo)
+            ->first();
+        $cashAccountCode = $cashAccountRecord?->CashAccount ?? null;
+
+        $query = DB::table('cms_bank_transactions as CBT')
+            ->where('CBT.account_no', $accountNo)
+            ->orderBy('CBT.transaction_date', 'asc');
+
+        if (!empty($dateFrom) && !empty($dateTo)) {
+            $query->whereBetween('CBT.transaction_date', [$dateFrom, $dateTo]);
+        }
+
+        $bankRows = $query->get();
+
+        // Collect all reference numbers from docref fields
+        $refMap = [];
+        foreach ($bankRows as $row) {
+            if (!empty($row->docref)) {
+                preg_match_all('/([^\s,]+)\s*-\s*[\d,.]+/', $row->docref, $matches);
+                foreach ($matches[1] as $ref) {
+                    $refMap[$ref] = true;
+                }
+            }
+        }
+
+        $acuMap = [];
+        if (!empty($refMap)) {
+            $refs = array_keys($refMap);
+            $acuQuery = DB::table('cms_cashaccount_details')
+                ->whereIn('ReferenceNumber', $refs);
+            // Filter by the mapped CashAccount code when available
+            if ($cashAccountCode) {
+                $acuQuery->where('CashAccount', $cashAccountCode);
+            }
+            $acuRows = $acuQuery->get()->keyBy('ReferenceNumber');
+            foreach ($acuRows as $ref => $acu) {
+                $acuMap[$ref] = $acu;
+            }
+        }
+
+        $result = [];
+        foreach ($bankRows as $row) {
+            $acu = null;
+            if (!empty($row->docref)) {
+                preg_match('/([^\s,]+)\s*-\s*[\d,.]+/', $row->docref, $m);
+                $firstRef = $m[1] ?? null;
+                if ($firstRef && isset($acuMap[$firstRef])) {
+                    $acu = $acuMap[$firstRef];
+                }
+            }
+
+            $result[] = [
+                // Bank columns
+                'id'               => $row->id,
+                'bank_code'        => $row->bank_code,
+                'account_no'       => $row->account_no,
+                'debit_or_credit'  => $row->debit_or_credit,
+                'amount'           => $row->amount,
+                'transaction_date' => $row->transaction_date,
+                'description'      => $row->description,
+                'docref'           => $row->docref,
+                // Acumatica columns (null if unmatched)
+                'acu_account'      => $acu->CashAccount ?? null,
+                'acu_reference'    => $acu->ReferenceNumber ?? null,
+                'acu_type'         => $acu->Type ?? null,
+                'acu_amount'       => $acu->Amount ?? null,
+                'acu_date'         => $acu->TransactionDate ?? null,
+                'acu_desc'         => $acu->TransactionDesc ?? null,
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+    public function autoBindTransactions(Request $request)
+    {
+        $accountNo = $request->input('account_no');
+        $dateFrom  = $request->input('date_from');
+        $dateTo    = $request->input('date_to');
+
+        // Resolve the CashAccount code from bank_cash_account mapping table
+        // In production this is an alphanumeric code like GH00576 that links to cms_cashaccount_details.CashAccount
+        $cashAccountRecord = DB::table('bank_cash_account')
+            ->where('AccountNo', $accountNo)
+            ->first();
+
+        $cashAccountCode = $cashAccountRecord?->CashAccount ?? null;
+
+        // Build used references to avoid double-binding
+        $usedReferences = $this->buildUsedReferences($dateFrom, $dateTo, $accountNo);
+
+        // Fetch unbound bank transactions in the date range
+        $query = DB::table('cms_bank_transactions')
             ->where('account_no', $accountNo)
-            ->whereDate('transaction_date', $date)
-            ->orderBy('transaction_date', 'asc')
-            ->get();
+            ->whereNull('docref');
 
-        return response()->json([
-            'status' => 200,
-            'data'   => $data,
-        ]);
+        if (!empty($dateFrom) && !empty($dateTo)) {
+            $query->whereBetween('transaction_date', [$dateFrom, $dateTo]);
+        }
+
+        $transactions = $query->get();
+
+        $bound = 0;
+        foreach ($transactions as $txn) {
+            $isDebit = in_array(strtoupper($txn->debit_or_credit), ['D', 'DEBIT']);
+
+            // Match cms_cashaccount_details:
+            //   bank Debit  → acumatica Credit != 0  (disbursement)
+            //   bank Credit → acumatica Debit  != 0  (receipt)
+            $matchQuery = DB::table('cms_cashaccount_details')
+                ->whereRaw('ABS(Amount) = ?', [abs((float) $txn->amount)]);
+
+            // Filter by CashAccount code if available (the alphanumeric link)
+            if ($cashAccountCode) {
+                $matchQuery->where('CashAccount', $cashAccountCode);
+            }
+
+            // Vice-versa type matching
+            if ($isDebit) {
+                $matchQuery->where('Credit', '!=', 0); // bank debit ↔ acumatica credit (disbursement)
+            } else {
+                $matchQuery->where('Debit', '!=', 0);  // bank credit ↔ acumatica debit (receipt)
+            }
+
+            if (!empty($usedReferences)) {
+                $matchQuery->whereNotIn('ReferenceNumber', $usedReferences);
+            }
+
+            $match = $matchQuery->first();
+
+            if ($match) {
+                DB::table('cms_bank_transactions')
+                    ->where('id', $txn->id)
+                    ->update([
+                        'docref'        => $match->ReferenceNumber . ' - ' . $txn->amount,
+                        'bindAt'        => now(),
+                        'reconciledAmt' => $txn->amount,
+                        'remainingAmt'  => 0,
+                    ]);
+
+                $usedReferences[] = $match->ReferenceNumber;
+                $bound++;
+            }
+        }
+
+        return response()->json(['bound' => $bound, 'message' => "Bound {$bound} transaction(s)."]);
     }
 
-    public function getAcumaticaEntries(Request $request)
+    private function buildUsedReferences(string $dateFrom, string $dateTo, string $accountNo): array
     {
-        $accountNo = $request->input('account_no');
-        $date      = $request->input('date');
+        $rows = DB::table('cms_bank_transactions')
+            ->select('docref')
+            ->where('account_no', $accountNo)
+            ->whereNotNull('docref');
 
-        $data = DB::table('cms_cashaccount_details')
-            ->where('CashAccount', $accountNo)
-            ->whereDate('TransactionDate', $date)
-            ->orderBy('TransactionDate', 'asc')
-            ->get();
+        if (!empty($dateFrom) && !empty($dateTo)) {
+            $rows->whereBetween('transaction_date', [$dateFrom, $dateTo]);
+        }
 
-        return response()->json([
-            'status' => 200,
-            'data'   => $data,
-        ]);
-    }
-
-    public function bindTransaction(Request $request)
-    {
-        $bankTransactionId = $request->input('bank_transaction_id');
-        $acumaticaRef      = $request->input('acumatica_ref');
-
-        DB::table('cms_bank_transactions')
-            ->where('id', $bankTransactionId)
-            ->update(['docref' => $acumaticaRef]);
-
-        return response()->json([
-            'status'  => 200,
-            'message' => 'Transaction bound successfully.',
-        ]);
+        $used = [];
+        foreach ($rows->pluck('docref') as $docref) {
+            preg_match_all('/([^\s,]+)\s*-\s*[\d,.]+/', $docref, $matches);
+            foreach ($matches[1] as $ref) {
+                $used[] = trim($ref);
+            }
+        }
+        return array_unique($used);
     }
 
     public function getReconCompanies()
@@ -85,7 +213,7 @@ class DailyTransactionController extends Controller
             ->orderBy('BankName');
 
         if ($company) {
-            $query->where('Company', $company);
+            $query->where('Company', 'like', "%{$company}%");
         }
 
         return response()->json($query->pluck('BankName'));
@@ -101,8 +229,8 @@ class DailyTransactionController extends Controller
             ->where('AccountNo', '!=', '')
             ->orderBy('AccountNo');
 
-        if ($company)  $query->where('Company', $company);
-        if ($bankName) $query->where('BankName', $bankName);
+        if ($company)  $query->where('Company', 'like', "%{$company}%");
+        if ($bankName) $query->where('BankName', 'like', "%{$bankName}%");
 
         return response()->json($query->get(['AccountNo', 'AccountName']));
     }

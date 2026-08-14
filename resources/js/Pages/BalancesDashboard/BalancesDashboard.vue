@@ -15,9 +15,9 @@ const perPage = 15;
 
 const kpi = computed(() => {
   const total = balances.value.length;
-  const balanced = balances.value.filter(b => b.status === 'Balanced').length;
-  const discrepancy = balances.value.filter(b => b.status === 'With Discrepancy').length;
-  const noData = balances.value.filter(b => b.status === 'No Acumatica Data').length;
+  const balanced = balances.value.filter(b => b.Status === 'Balanced').length;
+  const discrepancy = balances.value.filter(b => b.Status === 'With Discrepancy').length;
+  const noData = balances.value.filter(b => b.Status === 'No Balance Data').length;
   return { total, balanced, discrepancy, noData };
 });
 
@@ -35,8 +35,8 @@ const fetchBalances = async () => {
   loading.value = true;
   try {
     const companyParam = activeTab.value === 'ALL' ? '' : activeTab.value;
-    const res = await axios.get('/get-balances', { params: { company: companyParam } });
-    balances.value = res.data;
+    const res = await axios.get('/get-balance-summary', { params: { company: companyParam } });
+    balances.value = Array.isArray(res.data) ? res.data : [];
     currentPage.value = 1;
   } catch (err) {
     console.error(err);
@@ -99,7 +99,7 @@ const closeModal = () => {
 const getStatusBadgeClass = (status) => {
   if (status === 'Balanced') return 'bg-green-100 text-green-700 border border-green-200';
   if (status === 'With Discrepancy') return 'bg-red-100 text-red-700 border border-red-200';
-  if (status === 'No Acumatica Data') return 'bg-gray-100 text-gray-600 border border-gray-200';
+  if (status === 'No Balance Data') return 'bg-gray-100 text-gray-600 border border-gray-200';
   return 'bg-yellow-100 text-yellow-700 border border-yellow-200';
 };
 
@@ -202,7 +202,7 @@ onMounted(async () => {
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ b.Bank }}</td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{{ formatPHP(b.AvailableBalance) }}</td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <span :class="['px-2 py-1 rounded-full text-xs font-semibold', getStatusBadgeClass(b.status)]">{{ b.status }}</span>
+                        <span :class="['px-2 py-1 rounded-full text-xs font-semibold', getStatusBadgeClass(b.Status)]">{{ b.Status }}</span>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
                         <button
@@ -278,10 +278,10 @@ onMounted(async () => {
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="(t, i) in transactions" :key="i" class="hover:bg-gray-50">
-                <td class="px-4 py-2 whitespace-nowrap text-gray-900">{{ t.Date }}</td>
-                <td class="px-4 py-2 text-gray-700">{{ t.Description }}</td>
-                <td class="px-4 py-2 whitespace-nowrap text-green-600 font-medium">{{ formatPHP(t.Amount) }}</td>
-                <td class="px-4 py-2 whitespace-nowrap text-gray-900">{{ t.Type }}</td>
+                <td class="px-4 py-2 whitespace-nowrap text-gray-900">{{ t.transaction_date }}</td>
+                <td class="px-4 py-2 text-gray-700">{{ t.description }}</td>
+                <td class="px-4 py-2 whitespace-nowrap text-green-600 font-medium">{{ formatPHP(t.amount) }}</td>
+                <td class="px-4 py-2 whitespace-nowrap text-gray-900">{{ t.debit_or_credit }}</td>
               </tr>
             </tbody>
           </table>
